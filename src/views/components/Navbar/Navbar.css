@@ -13,6 +13,7 @@
   align-items: center;
   justify-content: space-between;
   width: inherit;
+  position: relative;
 }
 
 .navbar-logo {
@@ -22,10 +23,11 @@
 }
 
 .navbar-links {
-  list-style: none;
   display: flex;
-  gap: 1.5rem;
-  margin: 0;
+  gap: 1.25rem;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .navbar-links a {
@@ -37,4 +39,28 @@
 
 .navbar-links a:hover {
   color: #ffcc00;
+}
+
+.navbar-auth {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary, .btn-secondary {
+  background-color: rgba(0, 0, 0, 0.234);
+  color: #f0c000;
+  border: 2px solid #f0c000;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary:hover, .btn-secondary:hover {
+  background-color: #f0c000;
+  color: black;
+  transform: scale(1.03);
 }

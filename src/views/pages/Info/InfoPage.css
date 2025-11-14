@@ -1,0 +1,45 @@
+/* Generic styles for informational pages to match palette */
+.info-page-container {
+  max-width: 1000px;
+  margin: 6rem auto 3rem;
+  padding: 0 1rem 3rem;
+  color: #ffffff;
+}
+
+.info-auth-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-page-container h1 {
+  color: rgb(255, 179, 0);
+  font-size: 2.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.info-page-container h2 {
+  font-size: 1.6rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.info-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.info-section h3 {
+  margin: 0 0 0.5rem 0;
+  color: #ffcc00;
+}
+
+.info-section p {
+  margin: 0;
+  color: #e5e5e5;
+}
