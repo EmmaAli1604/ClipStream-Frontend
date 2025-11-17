@@ -5,7 +5,7 @@ import Login from "./views/pages/Login/Login";
 import Register from "./views/pages/Register/Register";
 import Navbar from "./views/components/Navbar/Navbar";
 
-export default function AppRoutes() {
+export default function App() {
   return (
     <Router>
       <Navbar />
