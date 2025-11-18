@@ -1,0 +1,124 @@
+.user-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.user-menu-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #eaba66 0%, #ffb700 100%);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.user-menu-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #eaba66 0%, #ffb700 100%);
+}
+
+.user-menu-button:active {
+  transform: scale(0.95);
+}
+
+.user-initial {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.user-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 8px;
+  width: 200px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  padding: 8px;
+  z-index: 1000;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  width: 12px;
+  height: 12px;
+  background: white;
+  transform: rotate(45deg);
+  border-left: 1px solid #e5e7eb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #1e293b;
+  transform: translateX(2px);
+}
+
+.dropdown-item.logout {
+  color: #dc2626;
+  margin-top: 4px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.dropdown-item.logout:hover {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #b91c1c;
+}
+
+/* Efecto de separación entre items */
+.dropdown-item:not(:last-child) {
+  margin-bottom: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .user-dropdown {
+    width: 180px;
+    right: -10px;
+  }
+  
+  .user-dropdown::before {
+    right: 20px;
+  }
+}

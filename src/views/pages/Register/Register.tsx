@@ -15,6 +15,8 @@ export default function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [generalError, setGeneralError] = useState("");
 
   const [errors, setErrors] = useState<{
     nombre?: string;
@@ -26,7 +28,6 @@ export default function Register() {
   }>({});
 
   const emailIsValid = (email: string) => {
-    // comprobación básica de email
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
@@ -52,11 +53,46 @@ export default function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setGeneralError("");
+    
     if (validate()) {
-      // aquí podrías enviar al backend
-      navigate("/home");
+      setIsLoading(true);
+      try {
+        const response = await fetch('http://localhost:8080/api/users/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            nombre: nombre.trim(),
+            apellido: apellidos.trim(), // Nota: el backend espera "apellido" (singular)
+            username: username.trim(),
+            correo: correo.trim(),
+            password: password
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Registro exitoso
+          navigate("/login", { 
+            state: { 
+              message: "¡Registro exitoso! Por favor inicia sesión." 
+            } 
+          });
+        } else {
+          // Error del servidor
+          setGeneralError(data.mensaje || "Error en el registro. Intenta nuevamente.");
+        }
+      } catch (error) {
+        console.error('Error al conectar con el servidor:', error);
+        setGeneralError("Error de conexión con el servidor");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -68,6 +104,7 @@ export default function Register() {
   ) => {
     setter(value);
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    if (generalError) setGeneralError("");
   };
 
   return (
@@ -76,6 +113,9 @@ export default function Register() {
         <form className="register-form" onSubmit={handleSubmit} noValidate>
           <h2>Crear cuenta</h2>
 
+          {/* Error general */}
+          {generalError && <p className="error-text general-error">{generalError}</p>}
+
           <div className="input-group">
             <input
               type="text"
@@ -83,6 +123,7 @@ export default function Register() {
               value={nombre}
               onChange={(e) => handleChange("nombre", e.target.value, setNombre)}
               className={errors.nombre ? "input-error" : ""}
+              disabled={isLoading}
             />
             {errors.nombre && <p className="error-text">{errors.nombre}</p>}
           </div>
@@ -94,6 +135,7 @@ export default function Register() {
               value={apellidos}
               onChange={(e) => handleChange("apellidos", e.target.value, setApellidos)}
               className={errors.apellidos ? "input-error" : ""}
+              disabled={isLoading}
             />
             {errors.apellidos && <p className="error-text">{errors.apellidos}</p>}
           </div>
@@ -105,6 +147,7 @@ export default function Register() {
               value={correo}
               onChange={(e) => handleChange("correo", e.target.value, setCorreo)}
               className={errors.correo ? "input-error" : ""}
+              disabled={isLoading}
             />
             {errors.correo && <p className="error-text">{errors.correo}</p>}
           </div>
@@ -116,6 +159,7 @@ export default function Register() {
               value={username}
               onChange={(e) => handleChange("username", e.target.value, setUsername)}
               className={errors.username ? "input-error" : ""}
+              disabled={isLoading}
             />
             {errors.username && <p className="error-text">{errors.username}</p>}
           </div>
@@ -128,11 +172,13 @@ export default function Register() {
                 value={password}
                 onChange={(e) => handleChange("password", e.target.value, setPassword)}
                 className={errors.password ? "input-error" : ""}
+                disabled={isLoading}
               />
               <button
                 type="button"
                 className="show-hide-button"
                 onClick={() => setShowPassword((s) => !s)}
+                disabled={isLoading}
               >
                 {showPassword ? <EyeOff size={20} className="icon-eye" /> : <Eye size={20} className="icon-eye" />}
               </button>
@@ -148,23 +194,34 @@ export default function Register() {
                 value={confirmPassword}
                 onChange={(e) => handleChange("confirmPassword", e.target.value, setConfirmPassword)}
                 className={errors.confirmPassword ? "input-error" : ""}
+                disabled={isLoading}
               />
               <button
                 type="button"
                 className="show-hide-button"
                 onClick={() => setShowConfirm((s) => !s)}
+                disabled={isLoading}
               >
-                {showPassword ? <EyeOff size={20} className="icon-eye" /> : <Eye size={20} className="icon-eye" />}
+                {showConfirm ? <EyeOff size={20} className="icon-eye" /> : <Eye size={20} className="icon-eye" />}
               </button>
             </div>
             {errors.confirmPassword && <p className="error-text">{errors.confirmPassword}</p>}
           </div>
 
-          <button type="submit" className="submit-button"> Registrarse </button>
-          <p className="auth-link"> ¿Ya tienes una cuenta?{" "} <Link to="/login" className="register-link">Iniciar sesión </Link></p>
+          <button 
+            type="submit" 
+            className="submit-button" 
+            disabled={isLoading}
+          >
+            {isLoading ? "Registrando..." : "Registrarse"}
+          </button>
+          
+          <p className="auth-link"> 
+            ¿Ya tienes una cuenta?{" "} 
+            <Link to="/login" className="register-link">Iniciar sesión</Link>
+          </p>
         </form>
       </div>
     </div>
   );
 }
-

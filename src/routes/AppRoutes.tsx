@@ -5,6 +5,7 @@ import Register from "../views/pages/Register/Register";
 import Navbar from "../views/components/Navbar/Navbar";
 import Footer from "../views/components/Footer/Footer";
 import Home from "../views/pages/Home/Home";
+import Cortometrajes from "../views/pages/Home/Cortometrajes.tsx";
 import ComoFuncionaCinefilos from "../views/pages/Info/ComoFuncionaCinefilos.tsx";
 import ComoFuncionaCreadores from "../views/pages/Info/ComoFuncionaCreadores.tsx";
 
@@ -19,6 +20,7 @@ export default function AppRoutes() {
         <Route path="/home" element={<Home/>} />
         <Route path="/para-cinefilos" element={<ComoFuncionaCinefilos/>} />
         <Route path="/para-creadores" element={<ComoFuncionaCreadores/>} />
+        <Route path="/cortometrajes" element={<Cortometrajes/>} />
       </Routes>
       <Footer/>
     </>
