@@ -28,7 +28,7 @@ export default function Cortometrajes() {
     nombre: "",
     sinopsis: "",
     generoId: "",
-    fecha: new Date().toISOString().split('T')[0], // Fecha actual por defecto
+    fecha: new Date().toISOString().split('T')[0],
     foto: "",
     video: "",
     director: ""
@@ -136,9 +136,9 @@ export default function Cortometrajes() {
     setSuccess("");
 
     try {
-      // Obtener el usuario actual del localStorage (asumiendo que guardaste el token/user)
+      // Obtener el usuario actual del localStorage
       const userData = localStorage.getItem('user');
-      let usuarioId = 1; // Valor por defecto para pruebas
+      let usuarioId = 1;
 
       if (userData) {
         const user = JSON.parse(userData);
@@ -170,6 +170,7 @@ export default function Cortometrajes() {
 
       if (response.ok && result.success) {
         setSuccess("¡Cortometraje creado exitosamente!");
+        
         // Limpiar el formulario
         setFormData({
           nombre: "",
@@ -181,10 +182,17 @@ export default function Cortometrajes() {
           director: ""
         });
         
-        // Redirigir al home después de 2 segundos
-        setTimeout(() => {
-          navigate("/home");
-        }, 2000);
+        // Navegar al detalle del cortometraje recién creado
+        if (result.data && result.data.cortometrajeId) {
+          setTimeout(() => {
+            navigate(`/cortometraje/${result.data.cortometrajeId}`);
+          }, 2000);
+        } else {
+          // Si no hay ID, redirigir al home
+          setTimeout(() => {
+            navigate("/home");
+          }, 2000);
+        }
       } else {
         setError(result.message || "Error al crear el cortometraje");
       }
@@ -199,11 +207,24 @@ export default function Cortometrajes() {
     navigate("/home");
   };
 
+  const handleViewCortometrajes = () => {
+    navigate("/home");
+  };
+
   return (
     <div className="cortometrajes-container">
       <div className="cortometrajes-overlay">
         <div className="cortometrajes-form-container">
-          <h2>Crear Nuevo Cortometraje</h2>
+          <div className="header-actions">
+            <h2>Crear Nuevo Cortometraje</h2>
+            <button 
+              type="button" 
+              className="view-cortometrajes-button"
+              onClick={handleViewCortometrajes}
+            >
+              Ver Cortometrajes
+            </button>
+          </div>
           
           {error && <div className="error-message general-error">{error}</div>}
           {success && <div className="success-message">{success}</div>}

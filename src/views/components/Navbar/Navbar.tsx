@@ -97,7 +97,7 @@ export default function Navbar() {
             {isLoggedIn ? (
               <>
                 <Link to="/cortometrajes">Agregar cortometraje</Link>
-                <UserMenu />
+                <UserMenu userData={userData} />
               </>
             ) : (
               <>
