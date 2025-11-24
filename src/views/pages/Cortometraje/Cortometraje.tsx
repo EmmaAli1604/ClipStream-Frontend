@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand } from "react-icons/fa";
 import "./Cortometraje.css";
 import Resena from "./Resena";
 import Calificacion from "./Calificacion";
@@ -28,16 +28,28 @@ export default function CortometrajeDetalle() {
   const [genero, setGenero] = useState<string>("");
   const [videoError, setVideoError] = useState(false);
 
-  // Detectar si es YouTube
+  // Estados para el reproductor personalizado (solo para Cloudinary)
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+
+  // === COMPATIBILIDAD CON YOUTUBE (PARA TUS VIDEOS EXISTENTES) ===
+  // Detectar si es YouTube - MANTENER ESTAS FUNCIONES POR AHORA
   const isYouTubeUrl = (url: string) => {
     return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
-  // Extraer ID de YouTube
+  // Extraer ID de YouTube - MANTENER ESTA FUNCIÓN POR AHORA
   const getYouTubeId = (url: string) => {
     const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
     return match ? match[1] : null;
   };
+  // ==============================================================
 
   useEffect(() => {
     const fetchCortometraje = async () => {
@@ -50,7 +62,6 @@ export default function CortometrajeDetalle() {
         
         if (data.success) {
           setCortometraje(data.data);
-          console.log('Video URL:', data.data.video); // Debug
           
           // Incrementar vistas
           await fetch(`http://localhost:8080/api/cortometrajes/${id}/vistas`, {
@@ -86,13 +97,77 @@ export default function CortometrajeDetalle() {
     }
   }, [id]);
 
-  const handleBack = () => {
-    navigate(-1);
+  // === CONTROLES DEL REPRODUCTOR PERSONALIZADO (SOLO PARA CLOUDINARY) ===
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+      setVolume(newVolume);
+      setIsMuted(newVolume === 0);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      videoRef.current?.parentElement?.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const handleVideoError = () => {
     console.error('Error al cargar el video');
     setVideoError(true);
+  };
+
+  const handleBack = () => {
+    navigate(-1);
   };
 
   if (loading) {
@@ -120,12 +195,12 @@ export default function CortometrajeDetalle() {
   return (
     <div className="cortometraje-container">
       <div className="cortometraje-detail">
-        {/* Video */}
+        {/* REPRODUCTOR DE VIDEO */}
         {cortometraje.video && !videoError && (
-          <div className="video-section">
-            <h2>Ver Cortometraje</h2>
-            <div className="video-container">
-              {isYouTubeUrl(cortometraje.video) ? (
+          <div className="video-section">        
+            {/* === YOUTUBE (MANTENER POR AHORA) === */}
+            {isYouTubeUrl(cortometraje.video) ? (
+              <div className="video-container">
                 <iframe
                   width="100%"
                   height="400"
@@ -135,19 +210,82 @@ export default function CortometrajeDetalle() {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 ></iframe>
-              ) : (
+              </div>
+            ) : (
+              /* === REPRODUCTOR PERSONALIZADO PARA CLOUDINARY === */
+              <div 
+                className="video-container-custom"
+                onMouseEnter={() => setShowControls(true)}
+                onMouseLeave={() => setShowControls(false)}
+              >
                 <video 
-                  controls 
-                  className="video-player"
+                  ref={videoRef}
+                  className="custom-video-player"
                   poster={cortometraje.foto}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
                   onError={handleVideoError}
+                  onClick={togglePlay}
                 >
                   <source src={cortometraje.video} type="video/mp4" />
                   <source src={cortometraje.video} type="video/webm" />
                   Tu navegador no soporta el elemento de video.
                 </video>
-              )}
-            </div>
+
+                {/* CONTROLES PERSONALIZADOS */}
+                <div className={`video-controls ${showControls ? 'show' : 'hide'}`}>
+                  {/* Barra de Progreso */}
+                  <div className="progress-bar-container">
+                    <input type="range"  min="0" max={duration || 0} value={currentTime} onChange={handleSeek} className="progress-bar" />
+                      <div className="progress-filled" style={{ width: `${(currentTime / duration) * 100}%` }} ></div>
+                  </div>
+
+                  {/* Botones de Control */}
+                  <div className="control-buttons">
+                    <div className="left-controls">
+                      <button onClick={togglePlay} className="control-btn play-pause">
+                        {isPlaying ? <FaPause /> : <FaPlay />}
+                      </button>
+                      
+                      <div className="volume-controls">
+                        <button onClick={toggleMute} className="control-btn volume-btn">
+                          {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
+                        </button>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={volume}
+                          onChange={handleVolumeChange}
+                          className="volume-bar"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="right-controls">
+                      <div className="time-display">
+                        {formatTime(currentTime)} / {formatTime(duration)}
+                      </div>
+                      <button onClick={toggleFullscreen} className="control-btn fullscreen-btn">
+                        <FaExpand />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Overlay de Play/Pausa */}
+                {!isPlaying && (
+                  <div className="play-overlay" onClick={togglePlay}>
+                    <div className="play-icon">
+                      <FaPlay size={50} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -162,7 +300,7 @@ export default function CortometrajeDetalle() {
           </div>
         )}
 
-        {/* Header con imagen y información básica */}
+        {/* INFORMACIÓN DEL CORTOMETRAJE */}
         <div className="detail-header">
           {cortometraje.foto && (
             <div className="poster-section">
@@ -226,7 +364,7 @@ export default function CortometrajeDetalle() {
           <Calificacion cortometrajeId={cortometraje.cortometrajeId} />
         )}
 
-        {/* Sinopsis */}
+        {/* SINOPSIS */}
         <div className="sinopsis-section">
           <h2>Sinopsis</h2>
           <p className="sinopsis-text">

@@ -1,309 +1,268 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import "./Home.css";
-import { FaStar, FaSearch, FaFilter } from "react-icons/fa";
 
 interface Cortometraje {
-  cortometrajeId: number;
+  id?: number;
+  cortometrajeId?: number;
   nombre: string;
-  sinopsis: string;
-  director: string;
-  fecha: string;
-  foto: string;
-  video: string;
-  numVistas: number;
-  calificacion: number;
-  generoId: number;
-  usuarioId: number;
+  sinopsis?: string;
+  foto?: string;     // URL de la imagen
+  video?: string;    // URL del video
+  generoId?: number | string;
+  generoNombre?: string; // este campo lo rellenaremos desde el mapa de géneros
+  numVistas?: number;
+  calificacion?: number;
+  fecha?: string;
+  director?: string;
+  usuarioId?: number;
 }
 
 interface Genero {
   generoId: number;
-  nombreGenero: string; // CORREGIDO: era "nombreGenenro"
+  nombreGenero: string;
 }
 
-// Interfaz para cortometraje con información completa del género
-interface CortometrajeCompleto extends Cortometraje {
-  generoNombre?: string;
+type ApiResponse = any;
+
+const API_BASE = "http://localhost:8080/api/cortometrajes";
+const GENRES_BASE = "http://localhost:8080/api/generos";
+
+/** helper que intenta extraer un array de cortometrajes de distintas formas de respuesta */
+function extraerLista(resp: ApiResponse): Cortometraje[] {
+  if (!resp) return [];
+  if (Array.isArray(resp)) return resp;
+  // caso tu CortometrajeResponse: { success, message, data } o { success, data: [...] }
+  if (Array.isArray(resp.data)) return resp.data;
+  if (Array.isArray(resp.cortometrajes)) return resp.cortometrajes;
+  if (Array.isArray(resp.result)) return resp.result;
+  if (resp.cortometraje) {
+    if (Array.isArray(resp.cortometraje)) return resp.cortometraje;
+    return [resp.cortometraje];
+  }
+  // buscar cualquier propiedad que sea array
+  const keys = Object.keys(resp);
+  for (const k of keys) {
+    if (Array.isArray(resp[k])) return resp[k];
+  }
+  return [];
 }
 
-export default function Home() {
-  const navigate = useNavigate();
-  const [cortometrajes, setCortometrajes] = useState<CortometrajeCompleto[]>([]);
+export default function Home(): JSX.Element {
+  const [populares, setPopulares] = useState<Cortometraje[]>([]);
+  const [mejorCalificados, setMejorCalificados] = useState<Cortometraje[]>([]);
+  const [recientes, setRecientes] = useState<Cortometraje[]>([]);
+  const [hero, setHero] = useState<Cortometraje | null>(null);
+
   const [generos, setGeneros] = useState<Genero[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingGeneros, setLoadingGeneros] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Estados para búsqueda y filtros
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGenero, setSelectedGenero] = useState<number | null>(null);
-  const [filteredCortometrajes, setFilteredCortometrajes] = useState<CortometrajeCompleto[]>([]);
 
-  // Cargar todos los cortometrajes al inicio
+  // Reproductor
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [playerUrl, setPlayerUrl] = useState<string | undefined>(undefined);
+  const [playerTitle, setPlayerTitle] = useState<string>("");
+
+  // Obtener nombre del género por ID (similar a tu Buscar)
+  const getGeneroNombre = (generoId?: number | string): string | undefined => {
+    if (generoId === undefined || generoId === null) return undefined;
+    const idNum = typeof generoId === "string" ? Number(generoId) : generoId;
+    if (Number.isNaN(idNum)) return undefined;
+    const g = generos.find((gen) => gen.generoId === idNum);
+    return g ? g.nombreGenero : undefined;
+  };
+
+  // Aplica generoNombre a una lista sin mutar objetos originales
+  const aplicarNombreGenero = (list: Cortometraje[]): Cortometraje[] =>
+    list.map((c) => ({
+      ...c,
+      generoNombre: c.generoNombre ?? getGeneroNombre(c.generoId),
+    }));
+
   useEffect(() => {
-    const fetchCortometrajes = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/api/cortometrajes');
-        if (!response.ok) {
-          throw new Error('Error al cargar los cortometrajes');
-        }
-        const data = await response.json();
-        if (data.success) {
-          setCortometrajes(data.data);
-          setFilteredCortometrajes(data.data); // Inicialmente mostrar todos
-        } else {
-          setError(data.message);
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-    // Cargar géneros
-    const fetchGeneros = async () => {
+    async function fetchAll() {
       try {
-        const response = await fetch('http://localhost:8080/api/generos');
-        if (!response.ok) {
-          throw new Error('Error al cargar los géneros');
-        }
-        const generosData = await response.json();
-        setGeneros(generosData);
-        console.log("Géneros cargados:", generosData); // Para debug
-      } catch (err: any) {
-        console.error("Error al cargar géneros:", err);
-      } finally {
+        // 1) Cargar géneros primero
+        const gResp = await fetch(GENRES_BASE);
+        if (!gResp.ok) throw new Error("Error al cargar géneros");
+        const gJson: Genero[] = await gResp.json();
+        if (cancelled) return;
+        setGeneros(gJson || []);
         setLoadingGeneros(false);
-      }
-    };
 
-    fetchCortometrajes();
-    fetchGeneros();
+        // 2) Cargar cortometrajes
+        const [rPop, rMej, rRec] = await Promise.all([
+          fetch(`${API_BASE}/populares`).then((r) => r.json()),
+          fetch(`${API_BASE}/mejor-calificados`).then((r) => r.json()),
+          fetch(`${API_BASE}/recientes`).then((r) => r.json()),
+        ]);
+
+        if (cancelled) return;
+
+        const listPop = aplicarNombreGenero(extraerLista(rPop));
+        const listMej = aplicarNombreGenero(extraerLista(rMej));
+        const listRec = aplicarNombreGenero(extraerLista(rRec));
+
+        setPopulares(listPop);
+        setMejorCalificados(listMej);
+        setRecientes(listRec);
+
+        // Hero: priorizamos populares > recientes > mejor calificados
+        const pick = (listPop[0] || listRec[0] || listMej[0]) ?? null;
+        setHero(pick);
+
+        setLoading(false);
+      } catch (e: any) {
+        console.error(e);
+        if (!cancelled) {
+          setError("No se pudieron cargar los datos. Revisa el backend.");
+          setLoading(false);
+          setLoadingGeneros(false);
+        }
+      }
+    }
+
+    fetchAll();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Cuando se cargan los géneros, actualizar los cortometrajes con los nombres de géneros
+  // Si los géneros cambian (ej. fetched after cortos), reaplicar nombres
   useEffect(() => {
-    if (generos.length > 0 && cortometrajes.length > 0) {
-      console.log("Actualizando cortometrajes con nombres de géneros...");
-      const cortometrajesConGeneros = cortometrajes.map(cortometraje => ({
-        ...cortometraje,
-        generoNombre: getGeneroNombre(cortometraje.generoId)
-      }));
-      
-      setCortometrajes(cortometrajesConGeneros);
-      setFilteredCortometrajes(cortometrajesConGeneros);
+    if (generos.length === 0) return;
+    setPopulares((prev) => aplicarNombreGenero(prev));
+    setMejorCalificados((prev) => aplicarNombreGenero(prev));
+    setRecientes((prev) => aplicarNombreGenero(prev));
+    setHero((prev) => (prev ? { ...prev, generoNombre: prev.generoNombre ?? getGeneroNombre(prev.generoId) } : prev));
+  }, [generos]);
+
+  function openPlayer(c: Cortometraje) {
+    if (!c.video) {
+      alert("No hay video disponible para este cortometraje.");
+      return;
     }
-  }, [generos, cortometrajes.length]);
+    setPlayerUrl(c.video);
+    setPlayerTitle(c.nombre);
+    setShowPlayer(true);
 
-  // Aplicar filtros cuando cambien los criterios de búsqueda
-  useEffect(() => {
-    let resultados = cortometrajes;
-
-    // Filtrar por término de búsqueda (nombre, director o género)
-    if (searchTerm) {
-      const termino = searchTerm.toLowerCase();
-      resultados = resultados.filter(corto => 
-        corto.nombre.toLowerCase().includes(termino) ||
-        corto.director.toLowerCase().includes(termino) ||
-        (corto.generoNombre && corto.generoNombre.toLowerCase().includes(termino))
-      );
+    const id = c.id ?? c.cortometrajeId;
+    if (id) {
+      fetch(`${API_BASE}/${id}/vistas`, { method: "PATCH" }).catch((err) => console.warn("No se pudo incrementar vistas:", err));
     }
+  }
 
-    // Filtrar por género seleccionado
-    if (selectedGenero) {
-      resultados = resultados.filter(corto => corto.generoId === selectedGenero);
-    }
+  function closePlayer() {
+    setShowPlayer(false);
+    setPlayerUrl(undefined);
+    setPlayerTitle("");
+  }
 
-    setFilteredCortometrajes(resultados);
-  }, [searchTerm, selectedGenero, cortometrajes]);
-
-  const handleLogin = () => {
-    navigate("/login");
-  };
-
-  const handleRegister = () => {
-    navigate("/register");
-  };
-
-  const handleCardClick = (cortometrajeId: number) => {
-    navigate(`/cortometraje/${cortometrajeId}`);
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleGeneroChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const generoId = e.target.value ? parseInt(e.target.value) : null;
-    setSelectedGenero(generoId);
-  };
-
-  const clearFilters = () => {
-    setSearchTerm("");
-    setSelectedGenero(null);
-  };
-
-  // Función para generar una duración aleatoria (ya que no está en la BD)
-  const generarDuracion = () => {
-    const duraciones = ["5 min", "8 min", "12 min", "15 min", "20 min", "25 min"];
-    return duraciones[Math.floor(Math.random() * duraciones.length)];
-  };
-
-  // Obtener nombre del género por ID - CORREGIDO
-  const getGeneroNombre = (generoId: number): string => {
-    const genero = generos.find(g => g.generoId === generoId);
-    console.log(`Buscando género ID ${generoId}:`, genero); // Para debug
-    return genero ? genero.nombreGenero : "Sin género"; // CORREGIDO: era "nombreGenenro"
-  };
-
-  // Verificar si hay datos de géneros
-  const hasGeneros = generos.length > 0;
-
-  if (loading) {
+  const ItemCard: React.FC<{ c: Cortometraje; onPlay?: (c: Cortometraje) => void }> = ({ c, onPlay }) => {
     return (
-      <div className="home-container">
-        <div className="overlay">
-          <div className="loading">Cargando cortometrajes...</div>
+      <div className="hs-card">
+        <div
+          className="hs-thumb"
+          style={{
+            backgroundImage: `url(${c.foto || "/placeholder-poster.png"})`,
+          }}
+        >
+          <button className="play-btn-small" onClick={() => onPlay && onPlay(c)} aria-label={`Reproducir ${c.nombre}`}>
+            ▶
+          </button>
+        </div>
+        <div className="hs-meta">
+          <div className="hs-title">{c.nombre}</div>
+          <div className="hs-sub">{c.generoNombre ?? `Género ${c.generoId ?? "-"}`}</div>
         </div>
       </div>
     );
-  }
+  };
 
-  if (error) {
-    return (
-      <div className="home-container">
-        <div className="overlay">
-          <div className="error-message">Error: {error}</div>
-        </div>
-      </div>
-    );
-  }
-
+  // render
   return (
-    <div className="home-container">
-      <div className="overlay">
-        {/* Barra de búsqueda y filtros */}
-        <div className="search-filter-container">
-          <div className="search-box">
-            <FaSearch className="search-icon" />
-            <input
-              type="text"
-              placeholder="Buscar cortometrajes por nombre, director o género..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="search-input"
-            />
-          </div>
+    <div className="home-root">
+      {loading && <div className="home-loading">Cargando cortometrajes...</div>}
+      {error && <div className="home-error">{error}</div>}
 
-          <div className="filter-controls">
-            <div className="filter-group">
-              <FaFilter className="filter-icon" />
-              <select
-                value={selectedGenero || ""}
-                onChange={handleGeneroChange}
-                className="genero-select"
-                disabled={!hasGeneros}
-              >
-                <option value="">Todos los géneros</option>
-                {hasGeneros ? (
-                  generos.map((genero) => (
-                    <option key={genero.generoId} value={genero.generoId}>
-                      {genero.nombreGenero} {/* CORREGIDO: era "nombreGenenro" */}
-                    </option>
-                  ))
-                ) : (
-                  <option value="" disabled>Cargando géneros...</option>
-                )}
-              </select>
-            </div>
-
-            {(searchTerm || selectedGenero) && (
-              <button onClick={clearFilters} className="clear-filters-btn">
-                Limpiar filtros
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Información de resultados */}
-        <div className="results-info">
-          <p>
-            Mostrando {filteredCortometrajes.length} de {cortometrajes.length} cortometrajes
-            {searchTerm && ` para "${searchTerm}"`}
-            {selectedGenero && ` en ${getGeneroNombre(selectedGenero)}`}
-          </p>
-        </div>
-
-        {/* Grid de cortometrajes */}
-        {filteredCortometrajes.length === 0 ? (
-          <div className="no-results">
-            <h3>No se encontraron cortometrajes</h3>
-            <p>Intenta con otros términos de búsqueda o selecciona un género diferente.</p>
-            <button onClick={clearFilters} className="clear-filters-btn large">
-              Mostrar todos los cortometrajes
-            </button>
-          </div>
-        ) : (
-          <div className="cortometrajes-grid">
-            {filteredCortometrajes.map((cortometraje) => (
-              <div 
-                key={cortometraje.cortometrajeId} 
-                className="cortometraje-card"
-                onClick={() => handleCardClick(cortometraje.cortometrajeId)}
-              >
-                <div className="card-image-container">
-                  {cortometraje.foto ? (
-                    <img 
-                      src={cortometraje.foto} 
-                      alt={cortometraje.nombre}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x200/4A5568/FFFFFF?text=Sin+Imagen';
-                      }}
-                    />
-                  ) : (
-                    <div className="placeholder-image">
-                      <span>{cortometraje.nombre}</span>
-                    </div>
-                  )}
-                  <div className="image-overlay">
-                    <div className="overlay-info">
-                      <p className="overlay-date">
-                        {new Date(cortometraje.fecha).toLocaleDateString()}
-                      </p>
-                      <p className="overlay-duration">
-                        {generarDuracion()}
-                      </p>
-                    </div>
-                    <div className="genero-badge">
-                      {cortometraje.generoNombre || getGeneroNombre(cortometraje.generoId)}
-                    </div>
-                  </div>
+      {!loading && !error && (
+        <>
+          {hero && (
+            <section
+              className="hero"
+              style={{
+                backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.2)), url(${hero.foto ||
+                  "/placeholder-hero.jpg"})`,
+              }}
+            >
+              <div className="hero-content">
+                <h1 className="hero-title">{hero.nombre}</h1>
+                <p className="hero-sinopsis">{hero.sinopsis}</p>
+                <div className="hero-meta">
+                  <span className="hero-genre">{hero.generoNombre ?? `Género ${hero.generoId ?? ""}`}</span>
+                  <span className="hero-dot">•</span>
+                  <span className="hero-year">{hero.fecha ? new Date(hero.fecha).getFullYear() : ""}</span>
                 </div>
-                
-                <div className="card-content">
-                  <h3 className="card-title">{cortometraje.nombre}</h3>
-                  <p className="card-director">Director: {cortometraje.director}</p>
-                  <div className="card-metadata">
-                    <span className="card-genero">
-                      {cortometraje.generoNombre || getGeneroNombre(cortometraje.generoId)}
-                    </span>
-                  </div>
-                  <div className="card-stats">
-                    <div className="card-rating">
-                      <FaStar /> {cortometraje.calificacion ? cortometraje.calificacion.toFixed(1) : '0.0'}
-                    </div>
-                    <div className="card-views">
-                      👁️ {cortometraje.numVistas || 0} vistas
-                    </div>
-                  </div>
+                <div className="hero-actions">
+                  <button className="play-btn" onClick={() => openPlayer(hero)}>
+                    ▶ Reproducir
+                  </button>
                 </div>
               </div>
-            ))}
+            </section>
+          )}
+
+          <section className="section">
+            <h2 className="section-title">Populares</h2>
+            <div className="hs-row">
+              {populares.length === 0 && <div className="empty-row">No hay populares</div>}
+              {populares.map((c, i) => (
+                <ItemCard key={c.id ?? c.cortometrajeId ?? i} c={c} onPlay={openPlayer} />
+              ))}
+            </div>
+          </section>
+
+          <section className="section">
+            <h2 className="section-title">Más vistos</h2>
+            <div className="hs-row">
+              {mejorCalificados.length === 0 && <div className="empty-row">No hay datos</div>}
+              {mejorCalificados.map((c, i) => (
+                <ItemCard key={c.id ?? c.cortometrajeId ?? i} c={c} onPlay={openPlayer} />
+              ))}
+            </div>
+          </section>
+
+          <section className="section">
+            <h2 className="section-title">Recién agregados</h2>
+            <div className="hs-row">
+              {recientes.length === 0 && <div className="empty-row">No hay recientes</div>}
+              {recientes.map((c, i) => (
+                <ItemCard key={c.id ?? c.cortometrajeId ?? i} c={c} onPlay={openPlayer} />
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      {showPlayer && playerUrl && (
+        <div className="player-overlay" role="dialog" aria-modal="true">
+          <div className="player-box">
+            <button className="player-close" onClick={closePlayer} aria-label="Cerrar reproductor">
+              ✕
+            </button>
+            <h3 className="player-title">{playerTitle}</h3>
+            <div className="player-video-container">
+              <video controls autoPlay src={playerUrl} className="player-video">
+                Tu navegador no soporta video HTML5.
+              </video>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

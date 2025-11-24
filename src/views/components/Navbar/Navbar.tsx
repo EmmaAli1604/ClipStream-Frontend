@@ -88,8 +88,8 @@ export default function Navbar() {
         </Link>
 
         <div className="navbar-links">
-          <Link to="/para-cinefilos">Para Cinéfilos</Link>
-          <Link to="/para-creadores">Para Creadores</Link>
+          <Link to="/home">INICIO</Link>
+          <Link to="/buscar">BUSCAR</Link>
         </div>
 
         {!isWelcomePage && (

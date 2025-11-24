@@ -24,6 +24,49 @@ interface Cortometraje {
   usuarioId: number;
 }
 
+interface DeleteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  cortometrajeName: string;
+}
+
+// Componente Modal para confirmar eliminación
+const DeleteModal: React.FC<DeleteModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  cortometrajeName 
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h3>¿Estás seguro de eliminar este cortometraje?</h3>
+        <p>
+          Estás a punto de eliminar "<strong>{cortometrajeName}</strong>". 
+          Esta acción no se puede deshacer.
+        </p>
+        <div className="modal-actions">
+          <button 
+            onClick={onClose} 
+            className="modal-button cancel-button"
+          >
+            Cancelar
+          </button>
+          <button 
+            onClick={onConfirm} 
+            className="modal-button confirm-button"
+          >
+            Sí, Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Profile() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [cortometrajes, setCortometrajes] = useState<Cortometraje[]>([]);
@@ -31,6 +74,17 @@ export default function Profile() {
   const [loadingCortometrajes, setLoadingCortometrajes] = useState(true);
   const [error, setError] = useState("");
   const [errorCortometrajes, setErrorCortometrajes] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    cortometrajeId: number | null;
+    cortometrajeName: string;
+  }>({
+    isOpen: false,
+    cortometrajeId: null,
+    cortometrajeName: ""
+  });
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,7 +92,6 @@ export default function Profile() {
       try {
         setLoading(true);
         
-        // Obtener datos del usuario del localStorage
         const storedUser = localStorage.getItem('user');
         if (!storedUser) {
           setError("No se encontraron datos de usuario. Por favor, inicia sesión.");
@@ -56,7 +109,6 @@ export default function Profile() {
           return;
         }
 
-        // Hacer la petición al backend
         const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
           method: 'GET',
           headers: {
@@ -98,7 +150,6 @@ export default function Profile() {
 
         if (!userId) return;
 
-        // Obtener cortometrajes del usuario
         const response = await fetch(`http://localhost:8080/api/cortometrajes/usuario/${userId}`, {
           method: 'GET',
           headers: {
@@ -147,6 +198,66 @@ export default function Profile() {
     navigate(`/cortometrajes/${cortometrajeId}`);
   };
 
+  const handleEditCortometraje = (cortometrajeId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/edit-cortometraje/${cortometrajeId}`);
+  };
+
+  const handleDeleteClick = (cortometrajeId: number, cortometrajeName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteModal({
+      isOpen: true,
+      cortometrajeId,
+      cortometrajeName
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.cortometrajeId) return;
+
+    try {
+      setDeletingId(deleteModal.cortometrajeId);
+      
+      const response = await fetch(`http://localhost:8080/api/cortometrajes/${deleteModal.cortometrajeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setCortometrajes(prev => prev.filter(corto => corto.cortometrajeId !== deleteModal.cortometrajeId));
+      } else {
+        throw new Error(result.message || "Error al eliminar el cortometraje");
+      }
+      
+    } catch (err: any) {
+      console.error("Error al eliminar el cortometraje:", err);
+      alert("Error al eliminar el cortometraje: " + err.message);
+    } finally {
+      setDeletingId(null);
+      setDeleteModal({
+        isOpen: false,
+        cortometrajeId: null,
+        cortometrajeName: ""
+      });
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({
+      isOpen: false,
+      cortometrajeId: null,
+      cortometrajeName: ""
+    });
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
@@ -188,6 +299,14 @@ export default function Profile() {
 
   return (
     <div className="profile-container">
+      {/* Modal de confirmación de eliminación */}
+      <DeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        cortometrajeName={deleteModal.cortometrajeName}
+      />
+
       <div className="profile-header">
         <h1>Mi Perfil</h1>
         <button onClick={handleEditProfile} className="edit-profile-button">
@@ -258,9 +377,11 @@ export default function Profile() {
                 <div 
                   key={cortometraje.cortometrajeId} 
                   className="cortometraje-card"
-                  onClick={() => handleViewCortometraje(cortometraje.cortometrajeId)}
                 >
-                  <div className="cortometraje-image">
+                  <div 
+                    className="cortometraje-image"
+                    onClick={() => handleViewCortometraje(cortometraje.cortometrajeId)}
+                  >
                     {cortometraje.foto ? (
                       <img 
                         src={cortometraje.foto} 
@@ -276,7 +397,12 @@ export default function Profile() {
                     )}
                   </div>
                   <div className="cortometraje-info">
-                    <h4 className="cortometraje-title">{cortometraje.nombre}</h4>
+                    <h4 
+                      className="cortometraje-title"
+                      onClick={() => handleViewCortometraje(cortometraje.cortometrajeId)}
+                    >
+                      {cortometraje.nombre}
+                    </h4>
                     <p className="cortometraje-director">Por: {cortometraje.director}</p>
                     <p className="cortometraje-sinopsis">
                       {cortometraje.sinopsis?.length > 100 
@@ -294,6 +420,28 @@ export default function Profile() {
                     <p className="cortometraje-date">
                       {formatDate(cortometraje.fecha)}
                     </p>
+                    
+                    {/* Botones de acción */}
+                    <div className="cortometraje-actions">
+                      <button 
+                        onClick={(e) => handleEditCortometraje(cortometraje.cortometrajeId, e)}
+                        className="action-button edit-button"
+                        disabled={deletingId === cortometraje.cortometrajeId}
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button 
+                        onClick={(e) => handleDeleteClick(cortometraje.cortometrajeId, cortometraje.nombre, e)}
+                        className="action-button delete-button"
+                        disabled={deletingId === cortometraje.cortometrajeId}
+                      >
+                        {deletingId === cortometraje.cortometrajeId ? (
+                          <span className="deleting-spinner"></span>
+                        ) : (
+                          "🗑️ Eliminar"
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
