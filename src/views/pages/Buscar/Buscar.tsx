@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Buscar.css";
-import { FaStar, FaSearch, FaFilter } from "react-icons/fa";
+import { FaStar, FaSearch, FaFilter, FaEye } from "react-icons/fa";
 
 interface Cortometraje {
   cortometrajeId: number;
@@ -164,10 +164,10 @@ export default function Buscar() {
   if (loading) {
     return (
       <div className="search-page-container">
-        <div className="overlay">
+      
           <div className="loading">Cargando cortometrajes...</div>
         </div>
-      </div>
+  
     );
   }
 
@@ -291,7 +291,7 @@ export default function Buscar() {
                       <FaStar /> {cortometraje.calificacion ? cortometraje.calificacion.toFixed(1) : '0.0'}
                     </div>
                     <div className="card-views">
-                      👁️ {cortometraje.numVistas || 0} vistas
+                      <FaEye /> {cortometraje.numVistas || 0} vistas
                     </div>
                   </div>
                 </div>

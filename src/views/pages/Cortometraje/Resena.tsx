@@ -224,13 +224,6 @@ export default function Resena({ cortometrajeId }: Props) {
                       )}
                     </div>
                   </div>
-                  <button 
-                    onClick={() => handleLike(resena.resenaId)}
-                    className="like-btn"
-                    title="Dar like a esta reseña"
-                  >
-                    👍 {resena.likes || 0}
-                  </button>
                 </div>
                 
                 <div className="resena-contenido">

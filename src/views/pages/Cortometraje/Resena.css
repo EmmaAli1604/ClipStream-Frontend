@@ -1,6 +1,6 @@
 .resenas-container {
   margin-top: 2rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #2a2a2a;
   padding-top: 2rem;
 }
 
@@ -10,22 +10,24 @@
 }
 
 .escribir-resena-section h3 {
-  color: #333;
+  color: #e0e0e0;
   margin-bottom: 1rem;
   font-size: 1.5rem;
 }
 
 .resena-form {
-  background: #f8f9fa;
+  background: #1c1c1c;
   padding: 1.5rem;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #333;
 }
 
 .resena-textarea {
-  width: 100%;
+  width: 97%;
   padding: 1rem;
-  border: 1px solid #ddd;
+  border: 1px solid #444;
+  background: #0f0f0f;
+  color: #e0e0e0;
   border-radius: 4px;
   resize: vertical;
   font-family: inherit;
@@ -35,8 +37,8 @@
 
 .resena-textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: #6ea8fe;
+  box-shadow: 0 0 0 2px rgba(110, 168, 254, 0.35);
 }
 
 .resena-actions {
@@ -46,12 +48,12 @@
 }
 
 .caracteres-restantes {
-  color: #6c757d;
+  color: #9a9a9a;
   font-size: 0.9rem;
 }
 
 .enviar-resena-btn {
-  background: #007bff;
+  background: #4a6cff;
   color: white;
   border: none;
   padding: 0.5rem 1.5rem;
@@ -61,17 +63,17 @@
 }
 
 .enviar-resena-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #3956d8;
 }
 
 .enviar-resena-btn:disabled {
-  background: #6c757d;
+  background: #555;
   cursor: not-allowed;
 }
 
 /* Sección: Lista de reseñas */
 .lista-resenas-section h3 {
-  color: #333;
+  color: #e0e0e0;
   margin-bottom: 1rem;
   font-size: 1.5rem;
 }
@@ -79,8 +81,8 @@
 .no-resenas {
   text-align: center;
   padding: 2rem;
-  color: #6c757d;
-  background: #f8f9fa;
+  color: #9a9a9a;
+  background: #1c1c1c;
   border-radius: 8px;
 }
 
@@ -91,11 +93,11 @@
 }
 
 .resena-card {
-  background: white;
-  border: 1px solid #e9ecef;
+  background: #161616;
+  border: 1px solid #2a2a2a;
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .resena-header {
@@ -114,7 +116,7 @@
 .usuario-avatar {
   width: 40px;
   height: 40px;
-  background: #007bff;
+  background: #4a6cff;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -125,18 +127,18 @@
 
 .usuario-nombre {
   font-weight: bold;
-  color: #333;
+  color: #e6e6e6;
   display: block;
 }
 
 .resena-fecha {
-  color: #6c757d;
+  color: #9a9a9a;
   font-size: 0.85rem;
 }
 
 .like-btn {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
+  background: #1f1f1f;
+  border: 1px solid #333;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   cursor: pointer;
@@ -144,14 +146,15 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  color: #e0e0e0;
 }
 
 .like-btn:hover {
-  background: #e9ecef;
+  background: #2b2b2b;
 }
 
 .resena-contenido {
-  color: #333;
+  color: #d0d0d0;
   line-height: 1.5;
   white-space: pre-wrap;
 }
@@ -159,16 +162,16 @@
 .loading-resenas {
   text-align: center;
   padding: 2rem;
-  color: #6c757d;
+  color: #9a9a9a;
 }
 
 .error-message {
-  background: #f8d7da;
-  color: #721c24;
+  background: #3a1e1e;
+  color: #ffb3b3;
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 1rem;
-  border: 1px solid #f5c6cb;
+  border: 1px solid #523232;
 }
 
 /* Responsive */

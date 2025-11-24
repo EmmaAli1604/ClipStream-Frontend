@@ -304,14 +304,10 @@ export default function CortometrajeDetalle() {
         <div className="detail-header">
           {cortometraje.foto && (
             <div className="poster-section">
-              <img 
-                src={cortometraje.foto} 
-                alt={cortometraje.nombre}
-                className="poster-image"
+              <img src={cortometraje.foto} alt={cortometraje.nombre} className="poster-image"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x450/4A5568/FFFFFF?text=Sin+Imagen';
-                }}
-              />
+                }} />
             </div>
           )}
           
@@ -320,17 +316,13 @@ export default function CortometrajeDetalle() {
             
             <div className="meta-info">
               <div className="meta-item">
-                <span className="meta-label">Director:</span>
+                <span className="meta-label">Director: </span>
                 <span className="meta-value">{cortometraje.director}</span>
               </div>
               
-              <div className="meta-item">
-                <span className="meta-label">Género:</span>
-                <span className="meta-value">{genero || "Cargando..."}</span>
-              </div>
               
               <div className="meta-item">
-                <span className="meta-label">Fecha:</span>
+                <span className="meta-label">Fecha: </span>
                 <span className="meta-value">
                   {new Date(cortometraje.fecha).toLocaleDateString('es-ES', {
                     year: 'numeric',
@@ -341,38 +333,30 @@ export default function CortometrajeDetalle() {
               </div>
               
               <div className="meta-item">
-                <span className="meta-label">Vistas:</span>
+                <span className="meta-label">Vistas: </span>
                 <span className="meta-value">{cortometraje.numVistas || 0}</span>
               </div>
             </div>
-
-            <div className="rating-section">
-              <div className="rating">
-                <span className="rating-star"><FaStar /></span>
-                <span className="rating-value">
-                  {cortometraje.calificacion ? cortometraje.calificacion.toFixed(1) : '0.0'}
-                </span>
-                <span className="rating-max">/ 5.0</span>
-                <span className="rating-count">(Promedio)</span>
+             <div className="meta-item-genero">
+                <span className="meta-value">{genero || "Cargando..."}</span>
               </div>
-            </div>
           </div>
-        </div>
-
-        {/* COMPONENTE DE CALIFICACIÓN */}
-        {cortometraje.cortometrajeId && (
-          <Calificacion cortometrajeId={cortometraje.cortometrajeId} />
-        )}
-
-        {/* SINOPSIS */}
+          {/* SINOPSIS */}
         <div className="sinopsis-section">
           <h2>Sinopsis</h2>
           <p className="sinopsis-text">
             {cortometraje.sinopsis || "No hay sinopsis disponible."}
           </p>
         </div>
+        </div>
 
-        {/* COMPONENTE RESEÑAS */}
+        {/* COMPONENTE DE CALIFICACIÓN */}
+        {cortometraje.cortometrajeId && (
+          <Calificacion cortometrajeId={cortometraje.cortometrajeId} />
+        )}
+      </div>
+      {/* COMPONENTE RESEÑAS */}
+      <div className="resenaSeccion">
         {cortometraje.cortometrajeId && (
           <Resena cortometrajeId={cortometraje.cortometrajeId} />
         )}

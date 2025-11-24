@@ -190,7 +190,6 @@ export default function Calificacion({ cortometrajeId }: Props) {
           <div className="promedio-info">
             <span className="promedio-valor">{promedio.toFixed(1)}</span>
             <span className="promedio-max">/ 5.0</span>
-            <span className="promedio-texto">Promedio</span>
           </div>
         </div>
 

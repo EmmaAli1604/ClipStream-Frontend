@@ -118,11 +118,25 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.sinopsis-section {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-top: 1px solid rgba(255,255,255,0.08); 
+  padding-top: 12px;
 }
 
 .title {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 2.5rem;
   line-height: 1.1;
 }
 
@@ -132,6 +146,25 @@
   gap: 12px;
   color: #cfcfcf;
   font-size: 0.95rem;
+}
+
+.meta-item-genero {
+  display: inline-block;
+  background: rgba(255,255,255,0.04); /* fondo oscuro que se ve gris sobre negro */
+  border: 1px solid rgba(255,255,255,0.08); /* borde suave gris */
+  color: #e6e6e6; /* texto claro */
+  padding: 6px 12px; /* espacio interior */
+  border-radius: 999px; /* totalmente curvado (pill) */
+  font-size: 0.875rem; /* tamaño pequeño pero legible */
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: inset 0 -2px 6px rgba(0,0,0,0.45), 0 6px 18px rgba(2,6,23,0.6);
+  backdrop-filter: blur(4px); /* efecto vidrio sutil en navegadores que lo soportan */
+  -webkit-backdrop-filter: blur(4px);
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+  vertical-align: middle;
+  user-select: none;
+  width: fit-content;
 }
 
 /* rating / vistas */
@@ -176,6 +209,11 @@
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
+}
+
+
+.resenaSeccion {
+    padding: 0px 20px 20px;
 }
 
 /* ==========================
